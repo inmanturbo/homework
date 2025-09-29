@@ -1,32 +1,46 @@
 <?php
 
-namespace Inmanturbo\Homework\Http\Controllers;
+namespace Inmanturbo\Homework\Http\Requests;
 
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
 
-class UserManagementController extends Controller
+class AuthenticateRequest extends FormRequest
 {
-    public function authenticate(Request $request): JsonResponse
+    public function authorize(): bool
     {
-        $grantType = $request->input('grant_type');
-
-        switch ($grantType) {
-            case 'authorization_code':
-                return $this->handleAuthorizationCodeFlow($request);
-            case 'refresh_token':
-                return $this->handleRefreshTokenFlow($request);
-            default:
-                return response()->json(['error' => 'unsupported_grant_type'], 400);
-        }
+        return true;
     }
 
-    private function handleAuthorizationCodeFlow(Request $request): JsonResponse
+    public function rules(): array
     {
-        $clientId = $request->input('client_id');
-        $redirectUri = $request->input('redirect_uri');
+        return [
+            'grant_type' => 'required|in:authorization_code,refresh_token',
+            'client_id' => 'required|string',
+            'client_secret' => 'nullable|string',
+            'code' => 'required_if:grant_type,authorization_code|string',
+            'redirect_uri' => 'nullable|string',
+            'code_verifier' => 'nullable|string',
+            'refresh_token' => 'required_if:grant_type,refresh_token|string',
+        ];
+    }
+
+    public function authenticate(): JsonResponse
+    {
+        $grantType = $this->input('grant_type');
+
+        return match ($grantType) {
+            'authorization_code' => $this->handleAuthorizationCodeFlow(),
+            'refresh_token' => $this->handleRefreshTokenFlow(),
+            default => response()->json(['error' => 'unsupported_grant_type'], 400),
+        };
+    }
+
+    private function handleAuthorizationCodeFlow(): JsonResponse
+    {
+        $clientId = $this->input('client_id');
+        $redirectUri = $this->input('redirect_uri');
 
         if (! $redirectUri) {
             $client = \Laravel\Passport\Client::find($clientId);
@@ -36,10 +50,10 @@ class UserManagementController extends Controller
         $tokenRequest = \Illuminate\Http\Request::create('/oauth/token', 'POST', [
             'grant_type' => 'authorization_code',
             'client_id' => $clientId,
-            'client_secret' => $request->input('client_secret'),
-            'code' => $request->input('code'),
+            'client_secret' => $this->input('client_secret'),
+            'code' => $this->input('code'),
             'redirect_uri' => $redirectUri,
-            'code_verifier' => $request->input('code_verifier'),
+            'code_verifier' => $this->input('code_verifier'),
         ]);
 
         $tokenResponse = app()->handle($tokenRequest);
@@ -75,13 +89,13 @@ class UserManagementController extends Controller
         return response()->json($finalResponse);
     }
 
-    private function handleRefreshTokenFlow(Request $request): JsonResponse
+    private function handleRefreshTokenFlow(): JsonResponse
     {
         $tokenRequest = \Illuminate\Http\Request::create('/oauth/token', 'POST', [
             'grant_type' => 'refresh_token',
-            'client_id' => $request->input('client_id'),
-            'client_secret' => $request->input('client_secret'),
-            'refresh_token' => $request->input('refresh_token'),
+            'client_id' => $this->input('client_id'),
+            'client_secret' => $this->input('client_secret'),
+            'refresh_token' => $this->input('refresh_token'),
         ]);
 
         $tokenResponse = app()->handle($tokenRequest);
@@ -115,51 +129,6 @@ class UserManagementController extends Controller
         ]);
     }
 
-    public function authenticateWithRefreshToken(Request $request): JsonResponse
-    {
-        return $this->handleRefreshTokenFlow($request);
-    }
-
-    public function jwks(string $clientId): JsonResponse
-    {
-        $key = config('app.key');
-
-        $keyId = 'workos-local-key-1';
-
-        return response()->json([
-            'keys' => [
-                [
-                    'kty' => 'oct',
-                    'use' => 'sig',
-                    'alg' => 'HS256',
-                    'kid' => $keyId,
-                    'k' => $this->base64urlEncode($key),
-                ],
-            ],
-        ]);
-    }
-
-    public function getUser(string $userId): JsonResponse
-    {
-        $userModel = config('auth.providers.users.model');
-        $user = $userModel::find($userId);
-
-        if (! $user) {
-            return response()->json(['error' => 'User not found'], 404);
-        }
-
-        return response()->json([
-            'id' => (string) $user->id,
-            'email' => $user->email,
-            'firstName' => explode(' ', $user->name)[0] ?? '',
-            'lastName' => explode(' ', $user->name, 2)[1] ?? '',
-            'emailVerified' => ! is_null($user->email_verified_at),
-            'createdAt' => $user->created_at->toISOString(),
-            'updatedAt' => $user->updated_at->toISOString(),
-        ]);
-    }
-
-
     private function getUserFromToken(string $accessToken): Authenticatable
     {
         $request = \Illuminate\Http\Request::create('/api/user', 'GET');
@@ -174,10 +143,5 @@ class UserManagementController extends Controller
         }
 
         return $user;
-    }
-
-    protected function base64urlEncode($data): string
-    {
-        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
     }
 }

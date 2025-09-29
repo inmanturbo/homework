@@ -96,17 +96,26 @@ Note: First-party clients (those without a `user_id`) will automatically bypass 
 
 ### Client Application Configuration
 
-In your client Laravel application using the WorkOS SDK, configure it to use your OAuth server:
+In your client Laravel application using the WorkOS SDK, configure it to use your OAuth server by calling `WorkOS::setApiBaseUrl()` in your `AppServiceProvider`:
 
 ```php
-// In AppServiceProvider or similar
+// In app/Providers/AppServiceProvider.php
 use Laravel\WorkOS\WorkOS;
 
 public function boot()
 {
-    $baseUrl = config('services.workos.base_url');
-    if ($baseUrl && $baseUrl !== 'https://api.workos.com/') {
-        WorkOS::setApiBaseUrl($baseUrl);
+    // Point WorkOS SDK to your local OAuth server
+    WorkOS::setApiBaseUrl('http://your-oauth-server.test');
+}
+```
+
+Alternatively, you can set it conditionally based on environment:
+
+```php
+public function boot()
+{
+    if (app()->environment('local')) {
+        WorkOS::setApiBaseUrl('http://workos-passport.test');
     }
 }
 ```

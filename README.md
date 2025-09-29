@@ -93,26 +93,56 @@ Note: First-party clients (those without a `user_id`) will automatically bypass 
 
 ### Client Application Configuration
 
-In your client Laravel application using the WorkOS SDK, configure it to use your OAuth server by calling `WorkOS::setApiBaseUrl()` in your `AppServiceProvider`:
+#### Option 1: Configuration-Based Approach (Recommended)
+
+The cleanest way is to use Laravel's configuration system. Add the WorkOS configuration to your `config/services.php`:
+
+```php
+// In config/services.php
+'workos' => [
+    'client_id' => env('WORKOS_CLIENT_ID'),
+    'secret' => env('WORKOS_API_KEY'),
+    'redirect_url' => env('WORKOS_REDIRECT_URL'),
+    'base_url' => env('WORKOS_BASE_URL', 'https://api.workos.com/'), // Add this line
+],
+```
+
+Then in your `.env` file:
+
+```env
+WORKOS_CLIENT_ID=your_client_id
+WORKOS_API_KEY=your_client_secret
+WORKOS_REDIRECT_URL=http://your-app.test/authenticate
+WORKOS_BASE_URL=http://your-oauth-server.test/
+```
+
+And configure the base URL in your `AppServiceProvider`:
 
 ```php
 // In app/Providers/AppServiceProvider.php
-use Laravel\WorkOS\WorkOS;
+use WorkOS\WorkOS;
 
 public function boot()
 {
-    // Point WorkOS SDK to your local OAuth server
-    WorkOS::setApiBaseUrl('http://your-oauth-server.test');
+    $baseUrl = config('services.workos.base_url');
+    if ($baseUrl && $baseUrl !== 'https://api.workos.com/') {
+        WorkOS::setApiBaseUrl($baseUrl);
+    }
 }
 ```
 
-Alternatively, you can set it conditionally based on environment:
+#### Option 2: Direct Configuration
+
+Alternatively, you can set it directly based on environment:
 
 ```php
+// In app/Providers/AppServiceProvider.php
+use WorkOS\WorkOS;
+
 public function boot()
 {
     if (app()->environment('local')) {
-        WorkOS::setApiBaseUrl('http://workos-passport.test');
+        WorkOS::setApiBaseUrl('http://workos-passport.test/');
     }
 }
 ```
@@ -136,8 +166,6 @@ The package includes the `AutoApproveFirstPartyClients` middleware that automati
 - Third-party clients still see the authorization prompt
 
 ### Preserving Intended URLs
-
-The package preserves Laravel's intended URL functionality. When users are redirected to login from a protected route, they'll be returned to their originally requested page after authentication:
 
 ```php
 // In your routes/auth.php
@@ -183,10 +211,12 @@ homework/
 ├── src/
 │   ├── HomeworkServiceProvider.php
 │   └── Http/
-│       ├── Controllers/
-│       │   └── UserManagementController.php
-│       └── Middleware/
-│           └── AutoApproveFirstPartyClients.php
+│       ├── Middleware/
+│       │   └── AutoApproveFirstPartyClients.php
+│       └── Requests/
+│           ├── AuthenticateRequest.php
+│           ├── GetUserRequest.php
+│           └── JwksRequest.php
 ├── routes/
 │   └── workos.php
 ├── resources/
@@ -211,7 +241,9 @@ homework/
 ### Key Components
 
 - **HomeworkServiceProvider**: Registers routes, views, and middleware
-- **UserManagementController**: Implements WorkOS UserManagement API endpoints
+- **AuthenticateRequest**: Handles OAuth authentication for both authorization code and refresh token flows
+- **GetUserRequest**: Handles user retrieval by ID with proper authentication
+- **JwksRequest**: Provides JWKS endpoint for JWT token verification
 - **AutoApproveFirstPartyClients**: Middleware for automatic first-party client approval
 - **Custom Views**: OAuth authorization and login views with Tailwind CSS styling
 

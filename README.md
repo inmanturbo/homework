@@ -1,5 +1,11 @@
 # inmanturbo/homework
 
+[![Tests](https://github.com/inmanturbo/homework/workflows/Tests/badge.svg)](https://github.com/inmanturbo/homework/actions)
+[![Fix PHP code style issues](https://github.com/inmanturbo/homework/workflows/Fix%20PHP%20code%20style%20issues/badge.svg)](https://github.com/inmanturbo/homework/actions)
+[![Latest Stable Version](https://poser.pugx.org/inmanturbo/homework/v/stable)](https://packagist.org/packages/inmanturbo/homework)
+[![Total Downloads](https://poser.pugx.org/inmanturbo/homework/downloads)](https://packagist.org/packages/inmanturbo/homework)
+[![License](https://poser.pugx.org/inmanturbo/homework/license)](https://packagist.org/packages/inmanturbo/homework)
+
 A Laravel Passport extension that provides WorkOS UserManagement API compatibility, allowing you to use Laravel Passport as a drop-in replacement for WorkOS authentication services.
 
 ## Overview

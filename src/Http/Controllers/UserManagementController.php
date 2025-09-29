@@ -2,16 +2,15 @@
 
 namespace Inmanturbo\Homework\Http\Controllers;
 
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
 use Illuminate\Support\Facades\Log;
 
 class UserManagementController extends Controller
 {
-
     public function authenticate(Request $request): JsonResponse
     {
         $grantType = $request->input('grant_type');
@@ -34,7 +33,7 @@ class UserManagementController extends Controller
             'all_parameters' => $request->all(),
             'client_id' => $request->input('client_id'),
             'redirect_uri' => $request->input('redirect_uri'),
-            'code' => substr($request->input('code'), 0, 50) . '...' // Truncate for logging
+            'code' => substr($request->input('code'), 0, 50) . '...', // Truncate for logging
         ]);
 
         // Get the redirect_uri from request or use the client's configured redirect_uri
@@ -42,7 +41,7 @@ class UserManagementController extends Controller
         $redirectUri = $request->input('redirect_uri');
 
         // If no redirect_uri provided, get it from the client configuration
-        if (!$redirectUri) {
+        if (! $redirectUri) {
             $client = \Laravel\Passport\Client::find($clientId);
             $redirectUri = $client ? $client->redirect : null;
             \Log::info('Using client configured redirect_uri', ['redirect_uri' => $redirectUri]);
@@ -65,12 +64,12 @@ class UserManagementController extends Controller
             \Log::error('Passport token exchange failed', [
                 'status' => $tokenResponse->getStatusCode(),
                 'response' => $tokenResponse->getContent(),
-                'request_data' => $tokenRequest->all()
+                'request_data' => $tokenRequest->all(),
             ]);
 
             return response()->json([
                 'error' => 'invalid_grant',
-                'debug' => json_decode($tokenResponse->getContent(), true)
+                'debug' => json_decode($tokenResponse->getContent(), true),
             ], 400);
         }
 
@@ -85,7 +84,7 @@ class UserManagementController extends Controller
             'email' => $user->email,
             'first_name' => explode(' ', $user->name, 2)[0] ?? '',
             'last_name' => isset(explode(' ', $user->name, 2)[1]) ? explode(' ', $user->name, 2)[1] : '',
-            'email_verified' => !is_null($user->email_verified_at),
+            'email_verified' => ! is_null($user->email_verified_at),
             'profile_picture_url' => null,
             'created_at' => $user->created_at->toISOString(),
             'updated_at' => $user->updated_at->toISOString(),
@@ -95,7 +94,7 @@ class UserManagementController extends Controller
             'user_name_from_db' => $user->name,
             'first_name' => $userResponse['first_name'],
             'last_name' => $userResponse['last_name'],
-            'full_response' => $userResponse
+            'full_response' => $userResponse,
         ]);
 
         // Final response that will be sent to client
@@ -104,7 +103,7 @@ class UserManagementController extends Controller
             'refresh_token' => $tokenData['refresh_token'],
             'access_token_expires_at' => time() + ($tokenData['expires_in'] ?? 3600),
             'refresh_token_expires_at' => time() + (30 * 24 * 3600), // 30 days
-            'user' => $userResponse
+            'user' => $userResponse,
         ];
 
         Log::info('Final JSON response', ['response' => $finalResponse]);
@@ -140,7 +139,7 @@ class UserManagementController extends Controller
             'email' => $user->email,
             'first_name' => explode(' ', $user->name, 2)[0] ?? '',
             'last_name' => isset(explode(' ', $user->name, 2)[1]) ? explode(' ', $user->name, 2)[1] : '',
-            'email_verified' => !is_null($user->email_verified_at),
+            'email_verified' => ! is_null($user->email_verified_at),
             'profile_picture_url' => null,
             'created_at' => $user->created_at->toISOString(),
             'updated_at' => $user->updated_at->toISOString(),
@@ -149,7 +148,7 @@ class UserManagementController extends Controller
         Log::info('Refresh token - User response being sent', [
             'user_name_from_db' => $user->name,
             'first_name' => $userResponse['first_name'],
-            'last_name' => $userResponse['last_name']
+            'last_name' => $userResponse['last_name'],
         ]);
 
         return response()->json([
@@ -157,7 +156,7 @@ class UserManagementController extends Controller
             'refresh_token' => $tokenData['refresh_token'],
             'access_token_expires_at' => time() + ($tokenData['expires_in'] ?? 3600),
             'refresh_token_expires_at' => time() + (30 * 24 * 3600), // 30 days
-            'user' => $userResponse
+            'user' => $userResponse,
         ]);
     }
 
@@ -206,8 +205,8 @@ class UserManagementController extends Controller
                     'alg' => 'HS256',
                     'kid' => $keyId,
                     'k' => base64url_encode($key),
-                ]
-            ]
+                ],
+            ],
         ]);
     }
 
@@ -215,7 +214,7 @@ class UserManagementController extends Controller
     {
         $user = \App\Models\User::find($userId);
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['error' => 'User not found'], 404);
         }
 
@@ -224,7 +223,7 @@ class UserManagementController extends Controller
             'email' => $user->email,
             'firstName' => explode(' ', $user->name)[0] ?? '',
             'lastName' => explode(' ', $user->name, 2)[1] ?? '',
-            'emailVerified' => !is_null($user->email_verified_at),
+            'emailVerified' => ! is_null($user->email_verified_at),
             'createdAt' => $user->created_at->toISOString(),
             'updatedAt' => $user->updated_at->toISOString(),
         ]);
@@ -264,7 +263,7 @@ class UserManagementController extends Controller
         $guard->setRequest($request);
         $user = $guard->user();
 
-        if (!$user) {
+        if (! $user) {
             throw new \Exception('Invalid access token');
         }
 
@@ -272,7 +271,7 @@ class UserManagementController extends Controller
             'user_id' => $user->id,
             'user_email' => $user->email,
             'user_name' => $user->name ?? 'NULL',
-            'user_attributes' => $user->getAttributes()
+            'user_attributes' => $user->getAttributes(),
         ]);
 
         return $user;
@@ -280,8 +279,9 @@ class UserManagementController extends Controller
 }
 
 // Helper function for base64url encoding
-if (!function_exists('base64url_encode')) {
-    function base64url_encode($data) {
+if (! function_exists('base64url_encode')) {
+    function base64url_encode($data)
+    {
         return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
     }
 }

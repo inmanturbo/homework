@@ -4,9 +4,9 @@ namespace Inmanturbo\Homework\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Laravel\Passport\Client;
 use League\OAuth2\Server\RequestTypes\AuthorizationRequest;
+use Symfony\Component\HttpFoundation\Response;
 
 class AutoApproveFirstPartyClients
 {
@@ -17,25 +17,25 @@ class AutoApproveFirstPartyClients
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->method() !== 'GET' || !$request->is('oauth/authorize')) {
+        if ($request->method() !== 'GET' || ! $request->is('oauth/authorize')) {
             return $next($request);
         }
 
-        if (!$request->hasSession()) {
+        if (! $request->hasSession()) {
             return $next($request);
         }
 
-        if (!$request->user()) {
+        if (! $request->user()) {
             return $next($request);
         }
 
         $clientId = $request->input('client_id');
-        if (!$clientId) {
+        if (! $clientId) {
             return $next($request);
         }
 
         $client = Client::find($clientId);
-        if (!$client || !empty($client->user_id)) {
+        if (! $client || ! empty($client->user_id)) {
             return $next($request);
         }
 
@@ -86,12 +86,14 @@ class AutoApproveFirstPartyClients
     private function getClientEntity($clientId)
     {
         $client = Client::find($clientId);
+
         return new \Laravel\Passport\Bridge\Client($client->id, $client->name, $client->redirect);
     }
 
     private function getUserEntity()
     {
         $user = auth()->user();
+
         return new \Laravel\Passport\Bridge\User($user->getAuthIdentifier());
     }
 
@@ -101,6 +103,7 @@ class AutoApproveFirstPartyClients
         foreach ($scopes as $scopeId) {
             $scopeEntities[] = new \Laravel\Passport\Bridge\Scope($scopeId);
         }
+
         return $scopeEntities;
     }
 }

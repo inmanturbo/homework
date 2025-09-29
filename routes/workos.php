@@ -7,7 +7,7 @@ use Inmanturbo\Homework\Http\Controllers\UserManagementController;
 // WorkOS UserManagement API routes - using Laravel Passport OAuth flow
 Route::prefix('user_management')->group(function () {
     // Route WorkOS authorize to Passport's authorize endpoint
-    Route::get('/authorize', function(Request $request) {
+    Route::get('/authorize', function (Request $request) {
         // Redirect to Passport's OAuth authorize route with all parameters
         return redirect('/oauth/authorize?' . $request->getQueryString());
     });

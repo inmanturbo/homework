@@ -38,7 +38,7 @@ Or for local development, add to your `composer.json`:
     "repositories": [
         {
             "type": "path",
-            "url": "./packages/workos-passport",
+            "url": "/path/to/homework",
             "options": {
                 "symlink": true
             }
@@ -169,14 +169,18 @@ The package returns WorkOS-compatible user responses:
 ### Directory Structure
 
 ```
-packages/workos-passport/
+homework/
+├── .github/
+│   └── workflows/
+│       ├── tests.yml
+│       └── pint.yml
 ├── src/
 │   ├── HomeworkServiceProvider.php
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   └── UserManagementController.php
-│   │   └── Middleware/
-│   │       └── AutoApproveFirstPartyClients.php
+│   └── Http/
+│       ├── Controllers/
+│       │   └── UserManagementController.php
+│       └── Middleware/
+│           └── AutoApproveFirstPartyClients.php
 ├── routes/
 │   └── workos.php
 ├── resources/
@@ -184,7 +188,18 @@ packages/workos-passport/
 │       └── auth/
 │           ├── authorize.blade.php
 │           └── login.blade.php
-└── composer.json
+├── tests/
+│   ├── Feature/
+│   │   ├── MiddlewareTest.php
+│   │   └── UserManagementTest.php
+│   ├── Unit/
+│   │   └── ServiceProviderTest.php
+│   ├── Pest.php
+│   └── TestCase.php
+├── composer.json
+├── phpunit.xml
+├── pint.json
+└── README.md
 ```
 
 ### Key Components

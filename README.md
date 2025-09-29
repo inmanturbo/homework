@@ -287,7 +287,7 @@ To migrate from WorkOS to this self-hosted solution:
 
 - PHP ^8.2
 - Laravel ^11.0 or ^12.0
-- Laravel Passport ^12.0
+- Laravel Passport ^13.0
 - Laravel WorkOS ^0.1.0
 
 ## License

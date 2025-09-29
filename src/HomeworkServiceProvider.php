@@ -2,22 +2,16 @@
 
 namespace Inmanturbo\Homework;
 
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Inmanturbo\Homework\Http\Middleware\AutoApproveFirstPartyClients;
-use Laravel\Fortify\Fortify;
 use Laravel\Passport\Passport;
 
 class HomeworkServiceProvider extends ServiceProvider
 {
-    public function register()
-    {
-        //
-    }
+    public function register() {}
 
     public function boot()
     {
-        // Register middleware
         $this->app['router']->aliasMiddleware('auto-approve-first-party', AutoApproveFirstPartyClients::class);
 
         $this->app['router']->pushMiddlewareToGroup('web', AutoApproveFirstPartyClients::class);

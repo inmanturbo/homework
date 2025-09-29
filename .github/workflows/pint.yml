@@ -1,37 +1,30 @@
-name: Fix PHP code style issues
+name: Check PHP code style
 
 on:
   push:
-    paths:
-      - '**.php'
-
-permissions:
-  contents: write
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   php-code-styling:
     runs-on: ubuntu-latest
 
+    name: Check Code Style (PHP 8.3)
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: 8.3
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
           coverage: none
 
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 
-      - name: Run Pint
-        run: vendor/bin/pint
-
-      - name: Commit linted files
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Fixes coding style"
+      - name: Check code style with Pint
+        run: vendor/bin/pint --test

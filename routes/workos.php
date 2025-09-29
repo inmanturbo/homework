@@ -5,7 +5,6 @@ use Illuminate\Support\Facades\Route;
 use Inmanturbo\Homework\Http\Controllers\UserManagementController;
 
 Route::prefix('user_management')->group(function () {
-
     Route::get('/authorize', function (Request $request) {
         return redirect('/oauth/authorize?' . $request->getQueryString());
     });

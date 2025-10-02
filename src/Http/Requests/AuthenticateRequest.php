@@ -65,7 +65,7 @@ class AuthenticateRequest extends FormRequest
                 'status' => $tokenResponse->getStatusCode(),
                 'response' => $tokenResponse->getContent(),
                 'client_id' => $clientId,
-                'has_code' => !empty($this->input('code')),
+                'has_code' => ! empty($this->input('code')),
                 'redirect_uri' => $redirectUri,
             ]);
 
@@ -115,7 +115,7 @@ class AuthenticateRequest extends FormRequest
                 'status' => $tokenResponse->getStatusCode(),
                 'response' => $tokenResponse->getContent(),
                 'client_id' => $this->input('client_id'),
-                'has_refresh_token' => !empty($this->input('refresh_token')),
+                'has_refresh_token' => ! empty($this->input('refresh_token')),
             ]);
 
             return response()->json(['error' => 'invalid_grant'], 400);

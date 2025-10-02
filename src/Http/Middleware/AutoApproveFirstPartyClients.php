@@ -50,7 +50,7 @@ class AutoApproveFirstPartyClients
 
         $authRequest = new AuthorizationRequest();
         $authRequest->setClient($this->getClientEntity($request->input('client_id')));
-        $authRequest->setUser($this->getUserEntity());
+        $authRequest->setUser($this->getUserEntity($request));
         $authRequest->setRedirectUri($request->input('redirect_uri'));
         $authRequest->setState($request->input('state'));
         $authRequest->setGrantTypeId('authorization_code');
@@ -90,9 +90,9 @@ class AutoApproveFirstPartyClients
         return new \Laravel\Passport\Bridge\Client($client->id, $client->name, $client->redirect_uris);
     }
 
-    private function getUserEntity()
+    private function getUserEntity(Request $request)
     {
-        $user = auth()->user();
+        $user = $request->user();
 
         return new \Laravel\Passport\Bridge\User($user->getAuthIdentifier());
     }

@@ -83,13 +83,37 @@ public function boot()
 
 ### Setting Up OAuth Clients
 
-Create a first-party OAuth client (will auto-approve):
+#### Creating OAuth Clients
+
+You can create OAuth clients using Laravel Passport's Artisan commands:
+
+**Option 1: Public Client (No Client Secret)**
+
+Public clients are suitable for SPAs and mobile apps that cannot securely store secrets:
 
 ```bash
-php artisan passport:client --public
+php artisan passport:client --public --name="My Client App"
 ```
 
-Note: First-party clients (those without a `user_id`) will automatically bypass the authorization screen.
+When prompted, enter your redirect URI (e.g., `http://your-app.test/authenticate`).
+
+**Option 2: Confidential Client (With Client Secret)**
+
+Confidential clients are suitable for server-side applications that can securely store secrets:
+
+```bash
+php artisan passport:client --name="My Server App"
+```
+
+When prompted:
+1. Enter your redirect URI (e.g., `http://your-app.test/authenticate`)
+2. Choose whether to enable device authorization flow (usually `no`)
+
+The command will output:
+- **Client ID**: Use this as `WORKOS_CLIENT_ID`
+- **Client Secret**: Use this as `WORKOS_API_KEY`
+
+**Important**: First-party clients (those without a `user_id`) will automatically bypass the authorization screen, providing a seamless experience for your own applications.
 
 ### Client Application Configuration
 
@@ -116,7 +140,7 @@ WORKOS_REDIRECT_URL=http://your-app.test/authenticate
 WORKOS_BASE_URL=http://your-oauth-server.test/
 ```
 
-And configure the base URL in your `AppServiceProvider`:
+And configure the WorkOS SDK in your `AppServiceProvider`:
 
 ```php
 // In app/Providers/AppServiceProvider.php
@@ -124,6 +148,10 @@ use WorkOS\WorkOS;
 
 public function boot()
 {
+    // Set the API key (client secret)
+    WorkOS::setApiKey(config('services.workos.secret'));
+
+    // Set the base URL to point to your OAuth server
     $baseUrl = config('services.workos.base_url');
     if ($baseUrl && $baseUrl !== 'https://api.workos.com/') {
         WorkOS::setApiBaseUrl($baseUrl);
@@ -141,6 +169,10 @@ use WorkOS\WorkOS;
 
 public function boot()
 {
+    // Always set the API key
+    WorkOS::setApiKey(env('WORKOS_API_KEY'));
+
+    // Set base URL based on environment
     if (app()->environment('local')) {
         WorkOS::setApiBaseUrl('http://workos-passport.test/');
     }

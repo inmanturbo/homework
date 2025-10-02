@@ -87,7 +87,7 @@ class AutoApproveFirstPartyClients
     {
         $client = Client::find($clientId);
 
-        return new \Laravel\Passport\Bridge\Client($client->id, $client->name, $client->redirect);
+        return new \Laravel\Passport\Bridge\Client($client->id, $client->name, $client->redirect_uris);
     }
 
     private function getUserEntity()

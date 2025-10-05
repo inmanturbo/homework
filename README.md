@@ -5,19 +5,71 @@
 
 A Laravel Passport extension that provides WorkOS UserManagement API compatibility, allowing you to use Laravel Passport as a drop-in replacement for WorkOS authentication services.
 
+## Quick Start
+
+```bash
+# 1. Install the package
+composer require inmanturbo/homework
+
+# 2. Install Passport (if not already installed)
+php artisan passport:install
+
+# 3. Create a WorkOS-compatible OAuth client
+php artisan homework:create-client http://your-app.test/authenticate --name="My App"
+
+# 4. Copy the output environment variables to your client application
+# 5. Done! Your Laravel app is now a WorkOS-compatible OAuth provider
+```
+
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Overview](#overview)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Setting Up OAuth Clients](#setting-up-oauth-clients)
+  - [Client Application Setup](#client-application-setup)
+  - [Authentication Flow](#authentication-flow)
+  - [Authorization Flow](#authorization-flow)
+  - [Customizing User Responses](#customizing-user-responses)
+  - [Customizing Authentication Responses](#customizing-authentication-responses)
+  - [Organization Selection Flow](#organization-selection-flow)
+- [Response Format](#response-format)
+- [Testing](#testing)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## Overview
 
 This package extends Laravel Passport to provide WorkOS-compatible OAuth endpoints, enabling you to self-host your authentication service while maintaining full compatibility with the Laravel WorkOS SDK client applications.
+
+**Key Benefits:**
+- Self-host your authentication instead of relying on WorkOS.com
+- Full control over user data and authentication flow
+- No vendor lock-in while maintaining SDK compatibility
+- Support for advanced features like multi-organization selection
 
 ## Features
 
 - **WorkOS UserManagement API Compatibility**: Implements WorkOS UserManagement authentication endpoints
 - **OAuth 2.0 Authorization Code Flow**: Full implementation using Laravel Passport
 - **Optional Auto-Approval**: Choose between standard OAuth authorization flow or automatic approval for first-party clients
-- **JWT Token Support**: Compatible with WorkOS token format
+- **RSA Key Support (RS256)**: JWKS endpoint for JWT token verification
+- **Organization Support**: Multi-organization selection flow without database migrations
+- **Customizable Responses**: Flexible user and authentication response transformations
+- **Headless Views**: Customize authorization and organization selection screens
+- **Easy Client Creation**: Artisan command and service for quick OAuth client setup
 - **Session Management**: Preserves intended URLs through OAuth flow
 - **Drop-in Replacement**: Works seamlessly with existing Laravel WorkOS integrations
-- **Flexible Integration**: Multiple approaches for customizing the authorization flow
+
+## Requirements
+
+- PHP 8.1 or higher
+- Laravel 11.x or higher
+- Laravel Passport 12.x or higher
+- Laravel WorkOS ^0.5.0 (for organization support on client apps)
 
 ## Installation
 
@@ -433,6 +485,65 @@ class CustomUserResponse extends UserResponse
     }
 }
 ```
+
+### Customizing Authentication Responses
+
+For advanced use cases, you can customize the entire authentication response structure (including top-level fields like `organization_id`, `impersonator`, etc.):
+
+#### Creating a Custom Authentication Response
+
+1. Create a class that implements `AuthenticationResponseContract`:
+
+```php
+namespace App\Services;
+
+use Illuminate\Contracts\Auth\Authenticatable;
+use Inmanturbo\Homework\Contracts\AuthenticationResponseContract;
+use Inmanturbo\Homework\Contracts\UserResponseContract;
+
+class CustomAuthenticationResponse implements AuthenticationResponseContract
+{
+    public function __construct(
+        protected UserResponseContract $userResponse
+    ) {
+    }
+
+    public function build(Authenticatable $user, array $tokenData): array
+    {
+        $userResponse = $this->userResponse->transform($user);
+
+        // Extract organization_id to top level (WorkOS SDK requirement)
+        $organizationId = $userResponse['organization_id'] ?? null;
+        unset($userResponse['organization_id']);
+
+        return [
+            'access_token' => $tokenData['access_token'],
+            'refresh_token' => $tokenData['refresh_token'],
+            'access_token_expires_at' => time() + ($tokenData['expires_in'] ?? 3600),
+            'refresh_token_expires_at' => time() + (30 * 24 * 3600),
+            'organization_id' => $organizationId,
+            'user' => $userResponse,
+
+            // Add custom top-level fields
+            'impersonator' => $user->impersonator ?? null,
+        ];
+    }
+}
+```
+
+2. Bind your custom class in a service provider:
+
+```php
+use App\Services\CustomAuthenticationResponse;
+use Inmanturbo\Homework\Contracts\AuthenticationResponseContract;
+
+public function register()
+{
+    $this->app->bind(AuthenticationResponseContract::class, CustomAuthenticationResponse::class);
+}
+```
+
+**Note:** The `organization_id` must be at the top level of the response for the WorkOS SDK to properly extract it. The default `AuthenticationResponse` handles this automatically.
 
 ### Organization Selection Flow
 

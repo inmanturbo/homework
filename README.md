@@ -56,29 +56,7 @@ If you haven't already installed Passport:
 php artisan passport:install
 ```
 
-### Step 3: Configure Your Application
-
-Add the following to your `.env` file:
-
-```env
-# WorkOS Configuration (pointed to your local OAuth server)
-WORKOS_CLIENT_ID=your_client_id
-WORKOS_API_KEY=your_client_secret
-WORKOS_BASE_URL=http://your-oauth-server.test
-```
-
-### Step 4: Update Your AuthServiceProvider
-
-Ensure Passport routes are registered in `app/Providers/AuthServiceProvider.php`:
-
-```php
-use Laravel\Passport\Passport;
-
-public function boot()
-{
-    Passport::routes();
-}
-```
+That's it! The package automatically registers all necessary routes and views.
 
 ## Usage
 
@@ -114,25 +92,11 @@ The command will output:
 - **Client ID**: Use this as `WORKOS_CLIENT_ID`
 - **Client Secret**: Use this as `WORKOS_API_KEY`
 
-**Important**: First-party clients (those without a `user_id`) will automatically bypass the authorization screen, providing a seamless experience for your own applications.
+**Note**: First-party clients (those without a `user_id`) can automatically bypass the authorization screen when using the optional auto-approval features (see Authorization Flow section below).
 
 ### Client Application Configuration
 
-#### Option 1: Configuration-Based Approach (Recommended)
-
-The cleanest way is to use Laravel's configuration system. Add the WorkOS configuration to your `config/services.php`:
-
-```php
-// In config/services.php
-'workos' => [
-    'client_id' => env('WORKOS_CLIENT_ID'),
-    'secret' => env('WORKOS_API_KEY'),
-    'redirect_url' => env('WORKOS_REDIRECT_URL'),
-    'base_url' => env('WORKOS_BASE_URL', 'https://api.workos.com/'), // Add this line
-],
-```
-
-Then in your `.env` file:
+Configure your client application's `.env` to point to your OAuth server:
 
 ```env
 WORKOS_CLIENT_ID=your_client_id
@@ -141,41 +105,17 @@ WORKOS_REDIRECT_URL=http://your-app.test/authenticate
 WORKOS_BASE_URL=http://your-oauth-server.test/
 ```
 
-And configure the WorkOS SDK in your `AppServiceProvider`:
+Then configure the WorkOS SDK to use your OAuth server in `app/Providers/AppServiceProvider.php`:
 
 ```php
-// In app/Providers/AppServiceProvider.php
 use WorkOS\WorkOS;
 
 public function boot()
 {
-    // Set the API key (client secret)
-    WorkOS::setApiKey(config('services.workos.secret'));
-
-    // Set the base URL to point to your OAuth server
-    $baseUrl = config('services.workos.base_url');
-    if ($baseUrl && $baseUrl !== 'https://api.workos.com/') {
-        WorkOS::setApiBaseUrl($baseUrl);
-    }
-}
-```
-
-#### Option 2: Direct Configuration
-
-Alternatively, you can set it directly based on environment:
-
-```php
-// In app/Providers/AppServiceProvider.php
-use WorkOS\WorkOS;
-
-public function boot()
-{
-    // Always set the API key
     WorkOS::setApiKey(env('WORKOS_API_KEY'));
 
-    // Set base URL based on environment
-    if (app()->environment('local')) {
-        WorkOS::setApiBaseUrl('http://workos-passport.test/');
+    if ($baseUrl = env('WORKOS_BASE_URL')) {
+        WorkOS::setApiBaseUrl($baseUrl);
     }
 }
 ```
@@ -315,7 +255,9 @@ To use your own authorization view, simply don't configure Passport to use the h
 
 Alternatively, you can override the package's view by creating a file at `resources/views/vendor/homework/auth/authorize.blade.php` in your application - Laravel will automatically use your version instead of the package's version.
 
-### Preserving Intended URLs
+### Preserving Intended URLs (Client Application)
+
+In your client application, use Laravel's `intended()` redirect to preserve the URL users were trying to access:
 
 ```php
 // In your routes/auth.php
@@ -372,8 +314,7 @@ homework/
 ├── resources/
 │   └── views/
 │       └── auth/
-│           ├── authorize.blade.php
-│           └── login.blade.php
+│           └── authorize.blade.php
 ├── tests/
 │   ├── Feature/
 │   │   ├── MiddlewareTest.php

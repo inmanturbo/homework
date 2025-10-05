@@ -563,17 +563,23 @@ class UserOrganizationProvider implements OrganizationProviderContract
 {
     public function getOrganizationsForUser(Authenticatable $user): array
     {
-        // Return organizations from your data source
-        // This could be from a database, API, or any other source
         return [
-            ['id' => 'org_123', 'name' => 'Acme Corp'],
-            ['id' => 'org_456', 'name' => 'Tech Startup Inc'],
+            [
+                'id' => 'org_123',
+                'name' => 'Acme Corp',
+                'logo_url' => 'https://example.com/logos/acme.png', // optional
+            ],
+            [
+                'id' => 'org_456',
+                'name' => 'Tech Startup Inc',
+            ],
         ];
 
         // Or from a relationship:
         // return $user->organizations->map(fn($org) => [
         //     'id' => $org->id,
         //     'name' => $org->name,
+        //     'logo_url' => $org->logo_url, // optional - defaults to building icon
         // ])->toArray();
     }
 }

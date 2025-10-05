@@ -2,6 +2,8 @@
 
 namespace Inmanturbo\Homework;
 
+use Inmanturbo\Homework\Contracts\OrganizationProviderContract;
+
 class Homework
 {
     /**
@@ -43,5 +45,16 @@ class Homework
         }
 
         return response()->view('homework::auth.select-organization', $data);
+    }
+
+    /**
+     * Set the organization provider implementation.
+     *
+     * @param  string  $provider  The organization provider class name
+     * @return void
+     */
+    public static function useOrganizationProvider(string $provider)
+    {
+        app()->bind(OrganizationProviderContract::class, $provider);
     }
 }

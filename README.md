@@ -585,15 +585,15 @@ class UserOrganizationProvider implements OrganizationProviderContract
 }
 ```
 
-2. Bind the provider in a service provider:
+2. Bind the provider using `Homework::useOrganizationProvider()`:
 
 ```php
 use App\Services\UserOrganizationProvider;
-use Inmanturbo\Homework\Contracts\OrganizationProviderContract;
+use Inmanturbo\Homework\Homework;
 
-public function register()
+public function boot()
 {
-    $this->app->bind(OrganizationProviderContract::class, UserOrganizationProvider::class);
+    Homework::useOrganizationProvider(UserOrganizationProvider::class);
 }
 ```
 

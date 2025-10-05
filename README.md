@@ -685,20 +685,39 @@ homework/
 │       ├── tests.yml
 │       └── pint.yml
 ├── src/
-│   ├── HomeworkServiceProvider.php
-│   └── Http/
-│       ├── Middleware/
-│       │   └── AutoApproveFirstPartyClients.php
-│       └── Requests/
-│           ├── AuthenticateRequest.php
-│           ├── GetUserRequest.php
-│           └── JwksRequest.php
+│   ├── Concerns/
+│   │   └── SkipsAuthorizationForFirstPartyClients.php
+│   ├── Console/
+│   │   └── Commands/
+│   │       └── CreateWorkOsClientCommand.php
+│   ├── Contracts/
+│   │   ├── AuthenticationResponseContract.php
+│   │   ├── OrganizationProviderContract.php
+│   │   └── UserResponseContract.php
+│   ├── Http/
+│   │   ├── Middleware/
+│   │   │   ├── AutoApproveFirstPartyClients.php
+│   │   │   └── RequireOrganizationSelection.php
+│   │   └── Requests/
+│   │       ├── AuthenticateRequest.php
+│   │       ├── GetUserRequest.php
+│   │       └── JwksRequest.php
+│   ├── Models/
+│   │   └── Client.php
+│   ├── Services/
+│   │   └── ClientService.php
+│   ├── Support/
+│   │   ├── AuthenticationResponse.php
+│   │   └── UserResponse.php
+│   ├── Homework.php
+│   └── HomeworkServiceProvider.php
 ├── routes/
 │   └── workos.php
 ├── resources/
 │   └── views/
 │       └── auth/
-│           └── authorize.blade.php
+│           ├── authorize.blade.php
+│           └── select-organization.blade.php
 ├── tests/
 │   ├── Feature/
 │   │   ├── MiddlewareTest.php
@@ -707,6 +726,7 @@ homework/
 │   │   └── ServiceProviderTest.php
 │   ├── Pest.php
 │   └── TestCase.php
+├── CLAUDE.md
 ├── composer.json
 ├── phpunit.xml
 ├── pint.json
@@ -715,17 +735,24 @@ homework/
 
 ### Key Components
 
-- **HomeworkServiceProvider**: Registers routes and loads views
+- **Homework**: Central configuration class for headless views (similar to Passport)
+- **HomeworkServiceProvider**: Registers routes, loads views, and binds contracts
 - **ClientService**: Static service for easily creating WorkOS-compatible OAuth clients
+- **CreateWorkOsClientCommand**: Artisan command for creating OAuth clients
 - **AuthenticateRequest**: Handles OAuth authentication for both authorization code and refresh token flows
 - **GetUserRequest**: Handles user retrieval by ID with proper authentication
-- **JwksRequest**: Provides JWKS endpoint for JWT token verification using RSA keys
+- **JwksRequest**: Provides JWKS endpoint for JWT token verification using RSA keys (RS256)
 - **UserResponseContract**: Interface for customizing user response transformation
-- **UserResponse**: Default implementation with avatar support and extensible design
+- **UserResponse**: Default implementation with WorkOS User integration and avatar support
+- **AuthenticationResponseContract**: Interface for customizing complete authentication response
+- **AuthenticationResponse**: Default implementation handling top-level organization_id
+- **OrganizationProviderContract**: Interface for providing user organizations
+- **RequireOrganizationSelection**: Middleware for multi-organization selection flow
 - **Client Model**: Custom Passport Client model with first-party auto-approval (optional)
 - **SkipsAuthorizationForFirstPartyClients Trait**: Reusable trait for adding auto-approval to any Client model (optional)
 - **AutoApproveFirstPartyClients Middleware**: Alternative middleware approach for auto-approval (optional)
 - **Authorization View**: Modern, dark-mode-enabled authorization screen (optional)
+- **Organization Selection View**: Dark-mode organization selection screen with headless support (optional)
 
 ## Testing
 

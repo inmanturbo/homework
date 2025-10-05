@@ -13,10 +13,11 @@ This package extends Laravel Passport to provide WorkOS-compatible OAuth endpoin
 
 - **WorkOS UserManagement API Compatibility**: Implements WorkOS UserManagement authentication endpoints
 - **OAuth 2.0 Authorization Code Flow**: Full implementation using Laravel Passport
-- **First-Party Client Auto-Approval**: Automatic authorization for first-party OAuth clients via middleware
+- **Optional Auto-Approval**: Choose between standard OAuth authorization flow or automatic approval for first-party clients
 - **JWT Token Support**: Compatible with WorkOS token format
 - **Session Management**: Preserves intended URLs through OAuth flow
 - **Drop-in Replacement**: Works seamlessly with existing Laravel WorkOS integrations
+- **Flexible Integration**: Multiple approaches for customizing the authorization flow
 
 ## Installation
 
@@ -189,13 +190,130 @@ The package provides these WorkOS-compatible endpoints:
 - `GET /user_management/users/{userId}` - Get user information
 - `GET /sso/jwks/{clientId}` - JWKS endpoint for token verification
 
-### First-Party Client Auto-Approval
+### Authorization Flow
 
-The package includes the `AutoApproveFirstPartyClients` middleware that automatically approves authorization requests for first-party clients. This means:
+By default, the package uses the standard OAuth authorization flow where users see an authorization screen asking them to approve access. You have three options for customizing this behavior:
 
-- Users are not shown an authorization screen for your own applications
+#### Option 1: Standard OAuth Flow (Default)
+
+No configuration needed. Users will see the authorization screen on first login.
+
+#### Option 2: Auto-Approval Using Client Model (Recommended)
+
+Use the provided Client model or trait to automatically approve first-party clients:
+
+**Using the Provided Client Model:**
+
+```php
+use Inmanturbo\Homework\Models\Client;
+use Laravel\Passport\Passport;
+
+// In your AppServiceProvider or a custom service provider
+public function boot()
+{
+    Passport::useClientModel(Client::class);
+}
+```
+
+**Using Your Own Client Model:**
+
+If you already have a custom Client model, add the trait:
+
+```php
+namespace App\Models;
+
+use Inmanturbo\Homework\Concerns\SkipsAuthorizationForFirstPartyClients;
+use Laravel\Passport\Client as PassportClient;
+
+class Client extends PassportClient
+{
+    use SkipsAuthorizationForFirstPartyClients;
+
+    // Your custom model code...
+}
+```
+
+Then configure Passport to use your model:
+
+```php
+use App\Models\Client;
+use Laravel\Passport\Passport;
+
+public function boot()
+{
+    Passport::useClientModel(Client::class);
+}
+```
+
+#### Option 3: Auto-Approval Using Middleware
+
+Alternatively, use the provided middleware (kept for backward compatibility):
+
+```php
+use Inmanturbo\Homework\Http\Middleware\AutoApproveFirstPartyClients;
+
+// In your AppServiceProvider or a custom service provider
+public function boot()
+{
+    // Register the middleware alias
+    $this->app['router']->aliasMiddleware(
+        'auto-approve-first-party',
+        AutoApproveFirstPartyClients::class
+    );
+
+    // Add to web middleware group
+    $this->app['router']->pushMiddlewareToGroup(
+        'web',
+        AutoApproveFirstPartyClients::class
+    );
+}
+```
+
+**How Auto-Approval Works:**
+
+When using either the Client model approach (Option 2) or middleware approach (Option 3):
+- Users are not shown an authorization screen for your own applications (first-party clients)
 - The OAuth flow completes transparently
-- Third-party clients still see the authorization prompt
+- Third-party clients (those with a `user_id`) still see the authorization prompt
+- First-party clients are identified by having an empty `user_id` field
+
+**Which approach should you use?**
+
+- **Option 1 (Standard Flow)**: Best for maximum security and transparency, or if you want users to explicitly approve access
+- **Option 2 (Client Model/Trait)**: Cleanest approach, uses Passport's native functionality, recommended for most use cases
+- **Option 3 (Middleware)**: Provides more control over the approval logic, useful if you need custom approval rules
+
+### Custom Authorization View (Optional)
+
+The package includes a modern, dark-mode-enabled authorization view that you can optionally use. This view is displayed when users need to approve access (when not using auto-approval, or for third-party clients).
+
+#### Using the Provided Authorization View
+
+Configure Passport to use the package's authorization view:
+
+```php
+use Laravel\Passport\Passport;
+
+// In your AppServiceProvider or a custom service provider
+public function boot()
+{
+    Passport::authorizationView('homework::auth.authorize');
+}
+```
+
+**View Features:**
+- Modern, clean design
+- Dark mode support (respects system preference and localStorage)
+- Responsive layout
+- Clear permission display with icons
+- Professional authorization/cancel buttons
+- Shows signed-in user email
+
+#### Customizing the View
+
+To use your own authorization view, simply don't configure Passport to use the homework view, and create your own view according to [Passport's documentation](https://laravel.com/docs/passport#customizing-the-authorization-view).
+
+Alternatively, you can override the package's view by creating a file at `resources/views/vendor/homework/auth/authorize.blade.php` in your application - Laravel will automatically use your version instead of the package's version.
 
 ### Preserving Intended URLs
 
@@ -272,12 +390,14 @@ homework/
 
 ### Key Components
 
-- **HomeworkServiceProvider**: Registers routes, views, and middleware
+- **HomeworkServiceProvider**: Registers routes and loads views
 - **AuthenticateRequest**: Handles OAuth authentication for both authorization code and refresh token flows
 - **GetUserRequest**: Handles user retrieval by ID with proper authentication
 - **JwksRequest**: Provides JWKS endpoint for JWT token verification
-- **AutoApproveFirstPartyClients**: Middleware for automatic first-party client approval
-- **Custom Views**: OAuth authorization and login views with Tailwind CSS styling
+- **Client Model**: Custom Passport Client model with first-party auto-approval (optional)
+- **SkipsAuthorizationForFirstPartyClients Trait**: Reusable trait for adding auto-approval to any Client model (optional)
+- **AutoApproveFirstPartyClients Middleware**: Alternative middleware approach for auto-approval (optional)
+- **Authorization View**: Modern, dark-mode-enabled authorization screen (optional)
 
 ## Testing
 

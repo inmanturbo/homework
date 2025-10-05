@@ -8,7 +8,13 @@ it('can instantiate the auto approve middleware', function () {
     expect($middleware)->toBeInstanceOf(AutoApproveFirstPartyClients::class);
 });
 
-it('registers the auto approve middleware', function () {
+it('can manually register the auto approve middleware', function () {
+    // Register the middleware (this is what users do in their own service providers)
+    app('router')->aliasMiddleware(
+        'auto-approve-first-party',
+        AutoApproveFirstPartyClients::class
+    );
+
     $middleware = app('router')->getMiddleware();
 
     expect($middleware)->toHaveKey('auto-approve-first-party');

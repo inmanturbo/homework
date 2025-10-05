@@ -62,11 +62,80 @@ That's it! The package automatically registers all necessary routes and views.
 
 ### Setting Up OAuth Clients
 
-#### Creating OAuth Clients
+#### Option 1: Using Artisan Command (Easiest)
 
-You can create OAuth clients using Laravel Passport's Artisan commands:
+Create a first-party WorkOS client using the provided Artisan command:
 
-**Option 1: Public Client (No Client Secret)**
+```bash
+php artisan homework:create-client http://your-app.test/authenticate --name="My Application"
+```
+
+This will output ready-to-copy environment variables:
+
+```
+✅ WorkOS client created successfully!
+
+  Client ID ............................. 0199b362-5239-723c-bbd7-1c61e492699a
+  Client Secret ..................... XrObuSKCZ3HwkcAV6DWAu00K2CAnLhGjklhSk8IU
+
+📋 Copy these environment variables to your client application:
+
+WORKOS_CLIENT_ID=0199b362-5239-723c-bbd7-1c61e492699a
+WORKOS_API_KEY=XrObuSKCZ3HwkcAV6DWAu00K2CAnLhGjklhSk8IU
+WORKOS_REDIRECT_URL=http://your-app.test/authenticate
+WORKOS_BASE_URL=http://your-oauth-server.test/
+```
+
+#### Option 2: Using the ClientService
+
+Programmatically create a first-party WorkOS-compatible client:
+
+```php
+use Inmanturbo\Homework\Services\ClientService;
+
+$config = ClientService::createFirstPartyWorkOsClient(
+    redirectUris: 'http://your-app.test/authenticate',
+    name: 'My Application'
+);
+
+// Output the configuration
+print_r($config['env_config']);
+```
+
+This will return all the configuration details you need:
+
+```php
+[
+    'client_id' => '0199b362-5239-723c-bbd7-1c61e492699a',
+    'client_secret' => 'XrObuSKCZ3HwkcAV6DWAu00K2CAnLhGjklhSk8IU',
+    'redirect_uris' => ['http://your-app.test/authenticate'],
+    'base_url' => 'http://your-oauth-server.test/',
+    'env_config' => [
+        'WORKOS_CLIENT_ID' => '0199b362-5239-723c-bbd7-1c61e492699a',
+        'WORKOS_API_KEY' => 'XrObuSKCZ3HwkcAV6DWAu00K2CAnLhGjklhSk8IU',
+        'WORKOS_REDIRECT_URL' => 'http://your-app.test/authenticate',
+        'WORKOS_BASE_URL' => 'http://your-oauth-server.test/',
+    ]
+]
+```
+
+**Multiple Redirect URIs:**
+
+```php
+$config = ClientService::createFirstPartyWorkOsClient(
+    redirectUris: [
+        'http://your-app.test/authenticate',
+        'http://localhost:3000/authenticate',
+    ],
+    name: 'My Application'
+);
+```
+
+#### Option 3: Using Passport's Artisan Commands
+
+You can also use Laravel Passport's built-in Artisan commands:
+
+**Public Client (No Client Secret)**
 
 Public clients are suitable for SPAs and mobile apps that cannot securely store secrets:
 
@@ -76,7 +145,7 @@ php artisan passport:client --public --name="My Client App"
 
 When prompted, enter your redirect URI (e.g., `http://your-app.test/authenticate`).
 
-**Option 2: Confidential Client (With Client Secret)**
+**Confidential Client (With Client Secret)**
 
 Confidential clients are suitable for server-side applications that can securely store secrets:
 
@@ -256,6 +325,85 @@ To use your own authorization view, simply don't configure Passport to use the h
 
 Alternatively, you can override the package's view by creating a file at `resources/views/vendor/homework/auth/authorize.blade.php` in your application - Laravel will automatically use your version instead of the package's version.
 
+### Customizing User Responses
+
+The package provides a flexible way to customize how user data is returned in WorkOS-compatible responses. This is useful for adding support for organizations, custom avatars, or any other user-related data.
+
+#### Creating a Custom User Response
+
+1. Create a class that implements `UserResponseContract`:
+
+```php
+namespace App\Services;
+
+use Illuminate\Contracts\Auth\Authenticatable;
+use Inmanturbo\Homework\Contracts\UserResponseContract;
+
+class CustomUserResponse implements UserResponseContract
+{
+    public function transform(Authenticatable $user): array
+    {
+        return [
+            'object' => 'user',
+            'id' => (string) $user->id,
+            'email' => $user->email,
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'email_verified' => ! is_null($user->email_verified_at),
+            'profile_picture_url' => $user->avatar_url,
+            'created_at' => $user->created_at->toISOString(),
+            'updated_at' => $user->updated_at->toISOString(),
+
+            // Add custom fields
+            'organization_id' => $user->organization_id,
+            'role' => $user->role,
+        ];
+    }
+}
+```
+
+2. Bind your custom class in a service provider:
+
+```php
+use App\Services\CustomUserResponse;
+use Inmanturbo\Homework\Contracts\UserResponseContract;
+
+public function register()
+{
+    $this->app->bind(UserResponseContract::class, CustomUserResponse::class);
+}
+```
+
+The custom user response will now be used for:
+- `/user_management/authenticate` endpoint
+- `/user_management/authenticate_with_refresh_token` endpoint
+- `/user_management/users/{userId}` endpoint
+
+#### Extending the Default Response
+
+You can also extend the default `UserResponse` class:
+
+```php
+namespace App\Services;
+
+use Illuminate\Contracts\Auth\Authenticatable;
+use Inmanturbo\Homework\Support\UserResponse;
+
+class CustomUserResponse extends UserResponse
+{
+    public function transform(Authenticatable $user): array
+    {
+        $response = parent::transform($user);
+
+        // Add additional fields
+        $response['organization_id'] = $user->organization_id ?? null;
+        $response['metadata'] = $user->metadata ?? [];
+
+        return $response;
+    }
+}
+```
+
 ### Preserving Intended URLs (Client Application)
 
 In your client application, use Laravel's `intended()` redirect to preserve the URL users were trying to access:
@@ -333,9 +481,12 @@ homework/
 ### Key Components
 
 - **HomeworkServiceProvider**: Registers routes and loads views
+- **ClientService**: Static service for easily creating WorkOS-compatible OAuth clients
 - **AuthenticateRequest**: Handles OAuth authentication for both authorization code and refresh token flows
 - **GetUserRequest**: Handles user retrieval by ID with proper authentication
-- **JwksRequest**: Provides JWKS endpoint for JWT token verification
+- **JwksRequest**: Provides JWKS endpoint for JWT token verification using RSA keys
+- **UserResponseContract**: Interface for customizing user response transformation
+- **UserResponse**: Default implementation with avatar support and extensible design
 - **Client Model**: Custom Passport Client model with first-party auto-approval (optional)
 - **SkipsAuthorizationForFirstPartyClients Trait**: Reusable trait for adding auto-approval to any Client model (optional)
 - **AutoApproveFirstPartyClients Middleware**: Alternative middleware approach for auto-approval (optional)

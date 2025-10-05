@@ -5,6 +5,7 @@ namespace Inmanturbo\Homework\Http\Requests;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\JsonResponse;
+use Inmanturbo\Homework\Contracts\UserResponseContract;
 
 class AuthenticateRequest extends FormRequest
 {
@@ -68,17 +69,7 @@ class AuthenticateRequest extends FormRequest
 
         $user = $this->getUserFromToken($tokenData['access_token']);
 
-        $userResponse = [
-            'object' => 'user',
-            'id' => (string) $user->id,
-            'email' => $user->email,
-            'first_name' => explode(' ', $user->name, 2)[0] ?? '',
-            'last_name' => isset(explode(' ', $user->name, 2)[1]) ? explode(' ', $user->name, 2)[1] : '',
-            'email_verified' => ! is_null($user->email_verified_at),
-            'profile_picture_url' => null,
-            'created_at' => $user->created_at->toISOString(),
-            'updated_at' => $user->updated_at->toISOString(),
-        ];
+        $userResponse = app(UserResponseContract::class)->transform($user);
 
         $finalResponse = [
             'access_token' => $tokenData['access_token'],
@@ -110,17 +101,7 @@ class AuthenticateRequest extends FormRequest
 
         $user = $this->getUserFromToken($tokenData['access_token']);
 
-        $userResponse = [
-            'object' => 'user',
-            'id' => (string) $user->id,
-            'email' => $user->email,
-            'first_name' => explode(' ', $user->name, 2)[0] ?? '',
-            'last_name' => isset(explode(' ', $user->name, 2)[1]) ? explode(' ', $user->name, 2)[1] : '',
-            'email_verified' => ! is_null($user->email_verified_at),
-            'profile_picture_url' => null,
-            'created_at' => $user->created_at->toISOString(),
-            'updated_at' => $user->updated_at->toISOString(),
-        ];
+        $userResponse = app(UserResponseContract::class)->transform($user);
 
         return response()->json([
             'access_token' => $tokenData['access_token'],

@@ -22,7 +22,6 @@ class ClientService
 
         $uris = Arr::wrap($redirectUris);
 
-        // Create an authorization code grant client (first-party)
         $client = $repository->createAuthorizationCodeGrantClient(
             name: $name,
             redirectUris: $uris,

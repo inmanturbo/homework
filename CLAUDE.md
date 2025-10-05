@@ -175,3 +175,10 @@ Run tests: `vendor/bin/pest`
 - Cache is automatically cleared after first use to prevent reuse
 - No database migrations required for organization support
 - First-party clients (without `user_id`) are auto-approved
+
+## Code Style Guidelines
+
+- **No single-line comments in code**: Code should be self-documenting through clear variable names, method names, and structure
+- Use DocBlocks for public methods and classes only
+- Let the code speak for itself - if a comment is needed, consider refactoring instead
+- Exception: Complex algorithms may use minimal comments for clarity

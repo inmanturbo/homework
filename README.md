@@ -622,10 +622,9 @@ use Inmanturbo\Homework\Homework;
 
 public function boot()
 {
-    Homework::organizationSelectionView(function ($data) {
-        // $data contains: organizations, user, state, clientId, redirectUri, responseType
-        return view('auth.select-organization', $data);
-    });
+    Homework::organizationSelectionView(fn ($data) => view('auth.select-organization', $data));
+
+    // $data contains: organizations, user, state, clientId, redirectUri, responseType
 }
 ```
 

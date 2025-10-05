@@ -20,7 +20,6 @@ class AuthenticationResponse implements AuthenticationResponseContract
     {
         $userResponse = $this->userResponse->transform($user);
 
-        // Extract organization_id from user response to top level (WorkOS SDK expects it there)
         $organizationId = $userResponse['organization_id'] ?? null;
         unset($userResponse['organization_id']);
 
@@ -32,7 +31,6 @@ class AuthenticationResponse implements AuthenticationResponseContract
             'user' => $userResponse,
         ];
 
-        // Add organization_id at top level if present
         if ($organizationId) {
             $response['organization_id'] = $organizationId;
         }

@@ -39,15 +39,11 @@ Route::post('/homework/select-organization', function (Request $request) {
 
     $organizationId = $request->input('organization_id');
 
-    // Store selected organization in session
     $request->session()->put('selected_organization_id', $organizationId);
 
-    // Also store in cache with user ID for retrieval during token exchange
-    // This persists beyond the session for the authenticate endpoint
     $userId = auth()->id();
     cache()->put("org_selection:{$userId}", $organizationId, now()->addMinutes(5));
 
-    // Redirect back to OAuth authorize with original parameters
     return redirect('/oauth/authorize?' . http_build_query([
         'client_id' => $request->input('client_id'),
         'state' => $request->input('state'),

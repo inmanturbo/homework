@@ -29,16 +29,11 @@ class UserResponse implements UserResponseContract
     {
         $nameParts = explode(' ', $user->name ?? '', 2);
 
-        // Check for selected organization in multiple locations:
-        // 1. Session (during authorization flow)
-        // 2. Cache (persisted from organization selection for token exchange)
-        // 3. User model attribute (if stored on user)
         $organizationId = session('selected_organization_id')
             ?? cache()->get("org_selection:{$user->id}")
             ?? $user->organization_id
             ?? null;
 
-        // Clear the cache after retrieving to prevent reuse
         if ($organizationId && cache()->has("org_selection:{$user->id}")) {
             cache()->forget("org_selection:{$user->id}");
         }
@@ -82,7 +77,6 @@ class UserResponse implements UserResponseContract
      */
     protected function getProfilePictureUrl(Authenticatable $user): ?string
     {
-        // Check common avatar attributes
         if (isset($user->avatar_url)) {
             return $user->avatar_url;
         }

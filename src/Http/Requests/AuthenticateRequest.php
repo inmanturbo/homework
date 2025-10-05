@@ -61,14 +61,6 @@ class AuthenticateRequest extends FormRequest
         $tokenResponse = app()->handle($tokenRequest);
 
         if ($tokenResponse->getStatusCode() !== 200) {
-            \Log::error('Passport authorization code exchange failed', [
-                'status' => $tokenResponse->getStatusCode(),
-                'response' => $tokenResponse->getContent(),
-                'client_id' => $clientId,
-                'has_code' => ! empty($this->input('code')),
-                'redirect_uri' => $redirectUri,
-            ]);
-
             return response()->json(['error' => 'invalid_grant'], 400);
         }
 
@@ -111,13 +103,6 @@ class AuthenticateRequest extends FormRequest
         $tokenResponse = app()->handle($tokenRequest);
 
         if ($tokenResponse->getStatusCode() !== 200) {
-            \Log::error('Passport refresh token exchange failed', [
-                'status' => $tokenResponse->getStatusCode(),
-                'response' => $tokenResponse->getContent(),
-                'client_id' => $this->input('client_id'),
-                'has_refresh_token' => ! empty($this->input('refresh_token')),
-            ]);
-
             return response()->json(['error' => 'invalid_grant'], 400);
         }
 

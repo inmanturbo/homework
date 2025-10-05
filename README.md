@@ -112,9 +112,10 @@ use WorkOS\WorkOS;
 
 public function boot()
 {
-    WorkOS::setApiKey(env('WORKOS_API_KEY'));
+    WorkOS::setApiKey(config('services.workos.secret'));
 
-    if ($baseUrl = env('WORKOS_BASE_URL')) {
+    $baseUrl = config('services.workos.base_url');
+    if ($baseUrl && $baseUrl !== 'https://api.workos.com/') {
         WorkOS::setApiBaseUrl($baseUrl);
     }
 }

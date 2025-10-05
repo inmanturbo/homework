@@ -10,8 +10,7 @@ class AuthenticationResponse implements AuthenticationResponseContract
 {
     public function __construct(
         protected UserResponseContract $userResponse
-    ) {
-    }
+    ) {}
 
     /**
      * Build the authentication response.

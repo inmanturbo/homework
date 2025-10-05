@@ -14,7 +14,6 @@ class Homework
     /**
      * Set a callback that should be used to render the organization selection view.
      *
-     * @param  callable  $callback
      * @return void
      */
     public static function organizationSelectionView(callable $callback)
@@ -35,7 +34,6 @@ class Homework
     /**
      * Render the organization selection view.
      *
-     * @param  array  $data
      * @return \Illuminate\Http\Response
      */
     public static function renderOrganizationSelectionView(array $data)

@@ -8,9 +8,6 @@ interface UserResponseContract
 {
     /**
      * Transform a user model into a WorkOS-compatible response.
-     *
-     * @param  \Illuminate\Contracts\Auth\Authenticatable  $user
-     * @return array
      */
     public function transform(Authenticatable $user): array;
 }

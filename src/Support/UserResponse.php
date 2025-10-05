@@ -9,9 +9,6 @@ class UserResponse implements UserResponseContract
 {
     /**
      * Transform a user model into a WorkOS-compatible response.
-     *
-     * @param  \Illuminate\Contracts\Auth\Authenticatable  $user
-     * @return array
      */
     public function transform(Authenticatable $user): array
     {
@@ -32,9 +29,6 @@ class UserResponse implements UserResponseContract
 
     /**
      * Get the profile picture URL for the user.
-     *
-     * @param  \Illuminate\Contracts\Auth\Authenticatable  $user
-     * @return string|null
      */
     protected function getProfilePictureUrl(Authenticatable $user): ?string
     {

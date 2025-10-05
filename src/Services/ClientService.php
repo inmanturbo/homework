@@ -18,7 +18,7 @@ class ClientService
         string|array $redirectUris,
         string $name = 'WorkOS Client'
     ): array {
-        $repository = new ClientRepository;
+        $repository = new ClientRepository();
 
         $uris = Arr::wrap($redirectUris);
 

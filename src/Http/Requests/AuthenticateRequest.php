@@ -5,7 +5,7 @@ namespace Inmanturbo\Homework\Http\Requests;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\JsonResponse;
-use Inmanturbo\Homework\Contracts\UserResponseContract;
+use Inmanturbo\Homework\Contracts\AuthenticationResponseContract;
 
 class AuthenticateRequest extends FormRequest
 {
@@ -69,17 +69,9 @@ class AuthenticateRequest extends FormRequest
 
         $user = $this->getUserFromToken($tokenData['access_token']);
 
-        $userResponse = app(UserResponseContract::class)->transform($user);
+        $response = app(AuthenticationResponseContract::class)->build($user, $tokenData);
 
-        $finalResponse = [
-            'access_token' => $tokenData['access_token'],
-            'refresh_token' => $tokenData['refresh_token'],
-            'access_token_expires_at' => time() + ($tokenData['expires_in'] ?? 3600),
-            'refresh_token_expires_at' => time() + (30 * 24 * 3600),
-            'user' => $userResponse,
-        ];
-
-        return response()->json($finalResponse);
+        return response()->json($response);
     }
 
     private function handleRefreshTokenFlow(): JsonResponse
@@ -101,15 +93,9 @@ class AuthenticateRequest extends FormRequest
 
         $user = $this->getUserFromToken($tokenData['access_token']);
 
-        $userResponse = app(UserResponseContract::class)->transform($user);
+        $response = app(AuthenticationResponseContract::class)->build($user, $tokenData);
 
-        return response()->json([
-            'access_token' => $tokenData['access_token'],
-            'refresh_token' => $tokenData['refresh_token'],
-            'access_token_expires_at' => time() + ($tokenData['expires_in'] ?? 3600),
-            'refresh_token_expires_at' => time() + (30 * 24 * 3600),
-            'user' => $userResponse,
-        ]);
+        return response()->json($response);
     }
 
     private function getUserFromToken(string $accessToken): Authenticatable

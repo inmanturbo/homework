@@ -434,6 +434,101 @@ class CustomUserResponse extends UserResponse
 }
 ```
 
+### Organization Selection Flow
+
+The package supports multi-organization users with an optional organization selection step after login. This is useful when users belong to multiple organizations and need to choose which one to access.
+
+#### Enabling Organization Selection
+
+1. Create a class that implements `OrganizationProviderContract`:
+
+```php
+namespace App\Services;
+
+use Illuminate\Contracts\Auth\Authenticatable;
+use Inmanturbo\Homework\Contracts\OrganizationProviderContract;
+
+class UserOrganizationProvider implements OrganizationProviderContract
+{
+    public function getOrganizationsForUser(Authenticatable $user): array
+    {
+        // Return organizations from your data source
+        // This could be from a database, API, or any other source
+        return [
+            ['id' => 'org_123', 'name' => 'Acme Corp'],
+            ['id' => 'org_456', 'name' => 'Tech Startup Inc'],
+        ];
+
+        // Or from a relationship:
+        // return $user->organizations->map(fn($org) => [
+        //     'id' => $org->id,
+        //     'name' => $org->name,
+        // ])->toArray();
+    }
+}
+```
+
+2. Bind the provider in a service provider:
+
+```php
+use App\Services\UserOrganizationProvider;
+use Inmanturbo\Homework\Contracts\OrganizationProviderContract;
+
+public function register()
+{
+    $this->app->bind(OrganizationProviderContract::class, UserOrganizationProvider::class);
+}
+```
+
+3. Add the middleware to your web middleware group:
+
+```php
+use Inmanturbo\Homework\Http\Middleware\RequireOrganizationSelection;
+
+public function boot()
+{
+    $this->app['router']->pushMiddlewareToGroup(
+        'web',
+        RequireOrganizationSelection::class
+    );
+}
+```
+
+**How it works:**
+- If a user belongs to multiple organizations, they'll see a selection screen after login
+- The selected `organization_id` is stored in the session and cache
+- The `organization_id` is automatically included in the authentication response
+- If a user belongs to 0 or 1 organization, the selection step is skipped
+
+#### Customizing the Organization Selection View
+
+Similar to Passport's authorization view, you can customize the organization selection screen:
+
+**Option 1: Using a Custom View Callback (Headless)**
+
+```php
+use Inmanturbo\Homework\Homework;
+
+public function boot()
+{
+    Homework::organizationSelectionView(function ($data) {
+        // $data contains: organizations, user, state, clientId, redirectUri, responseType
+        return view('auth.select-organization', $data);
+    });
+}
+```
+
+**Option 2: Override the Package View**
+
+Create a file at `resources/views/vendor/homework/auth/select-organization.blade.php` - Laravel will automatically use your version instead of the package's version.
+
+**Default View Features:**
+- Modern, clean design matching the authorization view
+- Dark mode support (respects system preference and localStorage)
+- Responsive layout
+- Organization cards with icons
+- Shows signed-in user email
+
 ### Preserving Intended URLs (Client Application)
 
 In your client application, use Laravel's `intended()` redirect to preserve the URL users were trying to access:
@@ -563,7 +658,7 @@ To migrate from WorkOS to this self-hosted solution:
 - PHP ^8.2
 - Laravel ^11.0 or ^12.0
 - Laravel Passport ^13.0
-- Laravel WorkOS ^0.1.0
+- Laravel WorkOS ^0.5.0 (includes organization support)
 
 ## License
 

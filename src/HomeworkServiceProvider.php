@@ -4,7 +4,9 @@ namespace Inmanturbo\Homework;
 
 use Illuminate\Support\ServiceProvider;
 use Inmanturbo\Homework\Console\Commands\CreateWorkOsClientCommand;
+use Inmanturbo\Homework\Contracts\AuthenticationResponseContract;
 use Inmanturbo\Homework\Contracts\UserResponseContract;
+use Inmanturbo\Homework\Support\AuthenticationResponse;
 use Inmanturbo\Homework\Support\UserResponse;
 
 class HomeworkServiceProvider extends ServiceProvider
@@ -13,6 +15,10 @@ class HomeworkServiceProvider extends ServiceProvider
     {
         $this->app->bind(UserResponseContract::class, function ($app) {
             return $app->make(UserResponse::class);
+        });
+
+        $this->app->bind(AuthenticationResponseContract::class, function ($app) {
+            return $app->make(AuthenticationResponse::class);
         });
     }
 

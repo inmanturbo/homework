@@ -29,9 +29,23 @@ class UserResponse implements UserResponseContract
     {
         $nameParts = explode(' ', $user->name ?? '', 2);
 
+        // Check for selected organization in multiple locations:
+        // 1. Session (during authorization flow)
+        // 2. Cache (persisted from organization selection for token exchange)
+        // 3. User model attribute (if stored on user)
+        $organizationId = session('selected_organization_id')
+            ?? cache()->get("org_selection:{$user->id}")
+            ?? $user->organization_id
+            ?? null;
+
+        // Clear the cache after retrieving to prevent reuse
+        if ($organizationId && cache()->has("org_selection:{$user->id}")) {
+            cache()->forget("org_selection:{$user->id}");
+        }
+
         return new WorkOsUser(
             id: (string) $user->id,
-            organizationId: $user->organization_id ?? null,
+            organizationId: $organizationId,
             firstName: $nameParts[0] ?? null,
             lastName: $nameParts[1] ?? null,
             email: $user->email,

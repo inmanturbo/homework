@@ -1,0 +1,16 @@
+<?php
+
+namespace Inmanturbo\Homework\Contracts;
+
+use Illuminate\Contracts\Auth\Authenticatable;
+
+interface OrganizationProviderContract
+{
+    /**
+     * Get organizations for the given user.
+     *
+     * @param  \Illuminate\Contracts\Auth\Authenticatable  $user
+     * @return array Array of ['id' => string, 'name' => string]
+     */
+    public function getOrganizationsForUser(Authenticatable $user): array;
+}

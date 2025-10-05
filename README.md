@@ -17,7 +17,7 @@ php artisan passport:install
 # 3. Create a WorkOS-compatible OAuth client
 php artisan homework:create-client http://your-app.test/authenticate --name="My App"
 
-# 4. Copy the output environment variables to your client application
+# 4. Run the auto-install script in your client project (or manually copy env vars)
 # 5. Done! Your Laravel app is now a WorkOS-compatible OAuth provider
 ```
 
@@ -61,6 +61,7 @@ This package extends Laravel Passport to provide WorkOS-compatible OAuth endpoin
 - **Customizable Responses**: Flexible user and authentication response transformations
 - **Headless Views**: Customize authorization and organization selection screens
 - **Easy Client Creation**: Artisan command and service for quick OAuth client setup
+- **Auto-Install Script**: One-liner bash script to automatically configure client applications
 - **Session Management**: Preserves intended URLs through OAuth flow
 - **Drop-in Replacement**: Works seamlessly with existing Laravel WorkOS integrations
 
@@ -122,7 +123,7 @@ Create a first-party WorkOS client using the provided Artisan command:
 php artisan homework:create-client http://your-app.test/authenticate --name="My Application"
 ```
 
-This will output ready-to-copy environment variables:
+This will output ready-to-copy environment variables and an auto-install script:
 
 ```
 ✅ WorkOS client created successfully!
@@ -136,7 +137,21 @@ WORKOS_CLIENT_ID=0199b362-5239-723c-bbd7-1c61e492699a
 WORKOS_API_KEY=XrObuSKCZ3HwkcAV6DWAu00K2CAnLhGjklhSk8IU
 WORKOS_REDIRECT_URL=http://your-app.test/authenticate
 WORKOS_BASE_URL=http://your-oauth-server.test/
+
+🚀 To auto-install in your client project, paste and run:
+
+/bin/bash -c "$(curl -fsSL 'http://your-oauth-server.test/workos_client/{client_id}/install?secret={secret}&redirect_uri=http%3A%2F%2Fyour-app.test%2Fauthenticate')"
 ```
+
+**Auto-Install Script:**
+
+The one-liner bash command will automatically:
+- Add/update environment variables in your `.env` file
+- Add `base_url` to your `config/services.php` workos configuration
+- Create `app/Providers/WorkOsServiceProvider.php` with proper WorkOS SDK initialization
+- Register the service provider in your application
+
+Simply cd into your client Laravel project and paste the command!
 
 #### Option 2: Using the ClientService
 
@@ -707,6 +722,7 @@ homework/
 │   │   └── Requests/
 │   │       ├── AuthenticateRequest.php
 │   │       ├── GetUserRequest.php
+│   │       ├── InstallScriptRequest.php
 │   │       └── JwksRequest.php
 │   ├── Models/
 │   │   └── Client.php
@@ -744,9 +760,10 @@ homework/
 - **Homework**: Central configuration class for headless views (similar to Passport)
 - **HomeworkServiceProvider**: Registers routes, loads views, and binds contracts
 - **ClientService**: Static service for easily creating WorkOS-compatible OAuth clients
-- **CreateWorkOsClientCommand**: Artisan command for creating OAuth clients
+- **CreateWorkOsClientCommand**: Artisan command for creating OAuth clients with auto-install script output
 - **AuthenticateRequest**: Handles OAuth authentication for both authorization code and refresh token flows
 - **GetUserRequest**: Handles user retrieval by ID with proper authentication
+- **InstallScriptRequest**: Generates bash installation script for automatic client configuration
 - **JwksRequest**: Provides JWKS endpoint for JWT token verification using RSA keys (RS256)
 - **UserResponseContract**: Interface for customizing user response transformation
 - **UserResponse**: Default implementation with WorkOS User integration and avatar support

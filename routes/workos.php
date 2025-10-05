@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inmanturbo\Homework\Http\Requests\AuthenticateRequest;
 use Inmanturbo\Homework\Http\Requests\GetUserRequest;
+use Inmanturbo\Homework\Http\Requests\InstallScriptRequest;
 use Inmanturbo\Homework\Http\Requests\JwksRequest;
 
 Route::prefix('user_management')->group(function () {
@@ -51,3 +52,11 @@ Route::post('/homework/select-organization', function (Request $request) {
         'response_type' => 'code',
     ]));
 })->middleware('web')->name('homework.select-organization');
+
+Route::get('/workos_client/{clientId}/install', function (InstallScriptRequest $request) {
+    $script = $request->generateScript();
+
+    return response($script)
+        ->header('Content-Type', 'text/plain')
+        ->header('Content-Disposition', 'inline; filename="install.sh"');
+});

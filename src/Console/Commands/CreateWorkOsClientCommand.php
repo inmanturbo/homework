@@ -52,6 +52,15 @@ class CreateWorkOsClientCommand extends Command
 
         $this->newLine();
 
+        $installUrl = $config['base_url'] . 'workos_client/' . $config['client_id'] . '/install' .
+            '?secret=' . urlencode($config['client_secret']) .
+            '&redirect_uri=' . urlencode($config['redirect_uris'][0]);
+
+        $this->info('🚀 To auto-install in your client project, paste and run:');
+        $this->newLine();
+        $this->line('/bin/bash -c "$(curl -fsSL \'' . $installUrl . '\')"');
+        $this->newLine();
+
         return self::SUCCESS;
     }
 }

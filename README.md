@@ -329,6 +329,36 @@ Alternatively, you can override the package's view by creating a file at `resour
 
 The package provides a flexible way to customize how user data is returned in WorkOS-compatible responses. This is useful for adding support for organizations, custom avatars, or any other user-related data.
 
+#### Using the workosUser() Method (Recommended)
+
+The simplest way to customize the user response is by adding a `workosUser()` method to your User model:
+
+```php
+use Laravel\WorkOS\User as WorkOsUser;
+
+class User extends Authenticatable
+{
+    public function workosUser(): WorkOsUser
+    {
+        return new WorkOsUser(
+            id: (string) $this->id,
+            organizationId: $this->organization_id, // Support for organizations
+            firstName: $this->first_name,
+            lastName: $this->last_name,
+            email: $this->email,
+            avatar: $this->avatar_url,
+        );
+    }
+}
+```
+
+The default `UserResponse` will:
+1. Check if your User model has a `workosUser()` method
+2. If found, use it to create the WorkOS User object
+3. If not found, create one automatically from common attributes
+4. Automatically include `organization_id` in the response if present
+5. Handle avatar URL detection from `avatar_url`, `profile_picture_url`, or `avatar` attributes
+
 #### Creating a Custom User Response
 
 1. Create a class that implements `UserResponseContract`:

@@ -461,6 +461,8 @@ class CustomUserResponse implements UserResponseContract
 
 2. Bind your custom class in a service provider:
 
+**Option 1: Direct Binding**
+
 ```php
 use App\Services\CustomUserResponse;
 use Inmanturbo\Homework\Contracts\UserResponseContract;
@@ -468,6 +470,18 @@ use Inmanturbo\Homework\Contracts\UserResponseContract;
 public function register()
 {
     $this->app->bind(UserResponseContract::class, CustomUserResponse::class);
+}
+```
+
+**Option 2: Using Homework Facade (Recommended)**
+
+```php
+use App\Services\CustomUserResponse;
+use Inmanturbo\Homework\Homework;
+
+public function boot()
+{
+    Homework::useUserResponse(CustomUserResponse::class);
 }
 ```
 
@@ -548,6 +562,8 @@ class CustomAuthenticationResponse implements AuthenticationResponseContract
 
 2. Bind your custom class in a service provider:
 
+**Option 1: Direct Binding**
+
 ```php
 use App\Services\CustomAuthenticationResponse;
 use Inmanturbo\Homework\Contracts\AuthenticationResponseContract;
@@ -555,6 +571,18 @@ use Inmanturbo\Homework\Contracts\AuthenticationResponseContract;
 public function register()
 {
     $this->app->bind(AuthenticationResponseContract::class, CustomAuthenticationResponse::class);
+}
+```
+
+**Option 2: Using Homework Facade (Recommended)**
+
+```php
+use App\Services\CustomAuthenticationResponse;
+use Inmanturbo\Homework\Homework;
+
+public function boot()
+{
+    Homework::useAuthenticationResponse(CustomAuthenticationResponse::class);
 }
 ```
 

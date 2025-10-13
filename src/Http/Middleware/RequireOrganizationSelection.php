@@ -32,7 +32,14 @@ class RequireOrganizationSelection
             return $next($request);
         }
 
+        if ($request->has('client_id') && ! $request->session()->has('oauth_flow_started')) {
+            $request->session()->forget('selected_organization_id');
+            $request->session()->put('oauth_flow_started', true);
+        }
+
         if ($request->session()->has('selected_organization_id')) {
+            $request->session()->forget('oauth_flow_started');
+
             return $next($request);
         }
 

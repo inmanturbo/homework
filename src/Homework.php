@@ -2,7 +2,9 @@
 
 namespace Inmanturbo\Homework;
 
+use Inmanturbo\Homework\Contracts\AuthenticationResponseContract;
 use Inmanturbo\Homework\Contracts\OrganizationProviderContract;
+use Inmanturbo\Homework\Contracts\UserResponseContract;
 
 class Homework
 {
@@ -56,5 +58,27 @@ class Homework
     public static function useOrganizationProvider(string $provider)
     {
         app()->bind(OrganizationProviderContract::class, $provider);
+    }
+
+    /**
+     * Set the user response implementation.
+     *
+     * @param  string  $response  The user response class name
+     * @return void
+     */
+    public static function useUserResponse(string $response)
+    {
+        app()->bind(UserResponseContract::class, $response);
+    }
+
+    /**
+     * Set the authentication response implementation.
+     *
+     * @param  string  $response  The authentication response class name
+     * @return void
+     */
+    public static function useAuthenticationResponse(string $response)
+    {
+        app()->bind(AuthenticationResponseContract::class, $response);
     }
 }

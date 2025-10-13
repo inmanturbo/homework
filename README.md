@@ -26,6 +26,7 @@ php artisan homework:create-client http://your-app.test/authenticate --name="My 
 - [Quick Start](#quick-start)
 - [Overview](#overview)
 - [Features](#features)
+- [Related Packages](#related-packages)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -65,6 +66,10 @@ This package extends Laravel Passport to provide WorkOS-compatible OAuth endpoin
 - **Auto-Install Script**: One-liner bash script to automatically configure client applications
 - **Session Management**: Preserves intended URLs through OAuth flow
 - **Drop-in Replacement**: Works seamlessly with existing Laravel WorkOS integrations
+
+## Related Packages
+
+**[Homework Organizations](https://github.com/inmanturbo/homework-organizations)** - Database-per-organization multi-tenancy for Laravel applications. Provides automatic organization database switching, storage isolation, and queue context propagation. Perfect companion for building multi-organization SaaS applications with Homework OAuth authentication.
 
 ## Requirements
 

@@ -4,6 +4,7 @@ namespace Inmanturbo\Homework;
 
 use Inmanturbo\Homework\Contracts\AuthenticationResponseContract;
 use Inmanturbo\Homework\Contracts\OrganizationProviderContract;
+use Inmanturbo\Homework\Contracts\TokenClaimsProviderContract;
 use Inmanturbo\Homework\Contracts\UserResponseContract;
 
 class Homework
@@ -80,5 +81,16 @@ class Homework
     public static function useAuthenticationResponse(string $response)
     {
         app()->bind(AuthenticationResponseContract::class, $response);
+    }
+
+    /**
+     * Set the token claims provider implementation.
+     *
+     * @param  string  $provider  The token claims provider class name
+     * @return void
+     */
+    public static function useTokenClaimsProvider(string $provider)
+    {
+        app()->bind(TokenClaimsProviderContract::class, $provider);
     }
 }

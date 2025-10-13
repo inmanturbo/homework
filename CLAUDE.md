@@ -176,6 +176,74 @@ Run tests: `vendor/bin/pest`
 - No database migrations required for organization support
 - First-party clients (without `user_id`) are auto-approved
 
+### Phase 7: Token Claims, Permissions & Metadata
+**Goal:** Support adding custom claims, permissions, roles, and metadata to tokens following WorkOS patterns
+
+**Implementation:**
+- Created `TokenClaimsProviderContract` interface for flexible claims provisioning
+- Updated `AuthenticationResponse` to optionally use claims provider
+- Implements WorkOS `org_id` pattern: single org → include `org_id`, multiple/zero → omit (stateless)
+- Supports permissions, roles, and custom metadata arrays
+- All optional - methods can return `null` to omit
+
+**Key Files:**
+- `src/Contracts/TokenClaimsProviderContract.php`
+- `src/Homework.php` - Added `useTokenClaimsProvider()` method
+- `src/Support/AuthenticationResponse.php` - Enhanced with claims support
+
+**Interface:**
+- `getOrganizations(Authenticatable $user): array` - Returns org IDs user belongs to
+- `getPermissions(Authenticatable $user): ?array` - Returns permission strings
+- `getRoles(Authenticatable $user): ?array` - Returns role strings
+- `getMetadata(Authenticatable $user): ?array` - Returns custom metadata to merge
+
+**Response Structure (with claims provider):**
+```json
+{
+  "access_token": "...",
+  "org_id": "org_123",
+  "user": {
+    "id": "user_123",
+    "email": "user@example.com",
+    "permissions": ["read:users", "write:posts"],
+    "roles": ["admin", "member"],
+    "department": "Engineering",
+    "custom_claim": "value"
+  }
+}
+```
+
+**Notes:**
+- Follows WorkOS pattern: `org_id` only if user has exactly one organization
+- Package doesn't implement authorization logic - just includes claims if provided
+- Stateless design for multi-org users
+- Backward compatible - existing code works without claims provider
+
+## Development Guidelines
+
+**All new features must include:**
+
+1. **Tests** - Write tests for new functionality
+   - Unit tests for isolated logic
+   - Feature tests for integration scenarios
+   - Tests should be in `tests/` directory within the package
+   - Run tests with `./vendor/bin/pest`
+
+2. **Documentation** - Update README.md with:
+   - Feature overview in table of contents
+   - Usage examples with code samples
+   - Response structure examples (JSON)
+   - Implementation notes and best practices
+
+3. **Development Log** - Add phase to CLAUDE.md:
+   - Goal and problem being solved
+   - Implementation approach
+   - Key files created/modified
+   - Response structures or flow diagrams
+   - Important notes or design decisions
+
+**This applies to all packages/sub-projects in the ecosystem.**
+
 ## Code Style Guidelines
 
 - **No single-line comments in code**: Code should be self-documenting through clear variable names, method names, and structure

@@ -35,6 +35,7 @@ php artisan homework:create-client http://your-app.test/authenticate --name="My 
   - [Authorization Flow](#authorization-flow)
   - [Customizing User Responses](#customizing-user-responses)
   - [Customizing Authentication Responses](#customizing-authentication-responses)
+  - [Token Claims, Permissions & Metadata](#token-claims-permissions--metadata)
   - [Organization Selection Flow](#organization-selection-flow)
 - [Response Format](#response-format)
 - [Testing](#testing)
@@ -67,9 +68,9 @@ This package extends Laravel Passport to provide WorkOS-compatible OAuth endpoin
 
 ## Requirements
 
-- PHP 8.1 or higher
-- Laravel 11.x or higher
-- Laravel Passport 12.x or higher
+- PHP 8.2 or higher
+- Laravel 11.x or 12.x
+- Laravel Passport 13.x
 - Laravel WorkOS ^0.5.0 (for organization support on client apps)
 
 ## Installation
@@ -588,6 +589,145 @@ public function boot()
 
 **Note:** The `organization_id` must be at the top level of the response for the WorkOS SDK to properly extract it. The default `AuthenticationResponse` handles this automatically.
 
+### Token Claims, Permissions & Metadata
+
+The package supports adding custom claims, permissions, roles, and metadata to authentication tokens, following WorkOS patterns. This allows you to enrich tokens with authorization data without implementing the actual authorization logic in the package.
+
+#### WorkOS org_id Pattern
+
+Following WorkOS conventions:
+- If a user belongs to **exactly one organization**, `org_id` is included in the response
+- If a user belongs to **zero or multiple organizations**, `org_id` is omitted (keeping the server stateless)
+- For multi-org users, organization selection happens on the client side
+
+#### Creating a Token Claims Provider
+
+1. Create a class that implements `TokenClaimsProviderContract`:
+
+```php
+namespace App\Services;
+
+use Illuminate\Contracts\Auth\Authenticatable;
+use Inmanturbo\Homework\Contracts\TokenClaimsProviderContract;
+
+class UserTokenClaimsProvider implements TokenClaimsProviderContract
+{
+    /**
+     * Get the organization IDs for the user.
+     * Return array of organization IDs the user belongs to.
+     */
+    public function getOrganizations(Authenticatable $user): array
+    {
+        // Example: Query user's organizations
+        return $user->organizations()->pluck('id')->toArray();
+
+        // Or return a single organization
+        // return $user->organization_id ? [$user->organization_id] : [];
+    }
+
+    /**
+     * Get the permissions for the user.
+     * Return null to omit permissions from response.
+     */
+    public function getPermissions(Authenticatable $user): ?array
+    {
+        // Example: Get from a permissions system
+        return $user->getAllPermissions()->pluck('name')->toArray();
+
+        // Or return null if not using permissions
+        // return null;
+    }
+
+    /**
+     * Get the roles for the user.
+     * Return null to omit roles from response.
+     */
+    public function getRoles(Authenticatable $user): ?array
+    {
+        // Example: Get user roles
+        return $user->roles()->pluck('name')->toArray();
+
+        // Or return null if not using roles
+        // return null;
+    }
+
+    /**
+     * Get custom metadata for the user.
+     * These will be merged into the user object.
+     * Return null or empty array to omit.
+     */
+    public function getMetadata(Authenticatable $user): ?array
+    {
+        return [
+            'department' => $user->department,
+            'employee_id' => $user->employee_id,
+            'custom_claim' => 'custom_value',
+        ];
+
+        // Or return null if no custom metadata
+        // return null;
+    }
+}
+```
+
+2. Bind your provider in a service provider:
+
+```php
+use App\Services\UserTokenClaimsProvider;
+use Inmanturbo\Homework\Homework;
+
+public function boot()
+{
+    Homework::useTokenClaimsProvider(UserTokenClaimsProvider::class);
+}
+```
+
+#### Response Structure
+
+When a `TokenClaimsProvider` is bound, the authentication response will include:
+
+**Single Organization User:**
+```json
+{
+  "access_token": "...",
+  "refresh_token": "...",
+  "org_id": "org_123",
+  "user": {
+    "id": "user_123",
+    "email": "user@example.com",
+    "permissions": ["read:users", "write:posts"],
+    "roles": ["admin", "member"],
+    "department": "Engineering",
+    "employee_id": "EMP001"
+  }
+}
+```
+
+**Multi-Organization User (stateless):**
+```json
+{
+  "access_token": "...",
+  "refresh_token": "...",
+  "user": {
+    "id": "user_123",
+    "email": "user@example.com",
+    "permissions": ["read:users", "write:posts"],
+    "roles": ["admin", "member"],
+    "department": "Engineering"
+  }
+}
+```
+
+Note: No `org_id` is included when the user belongs to multiple organizations, keeping the server stateless.
+
+#### Implementation Notes
+
+- **Optional**: All methods can return `null` to omit that claim type
+- **Flexible**: You decide how to fetch permissions/roles (database, cache, external API, etc.)
+- **Stateless**: The package doesn't manage permissions - it just includes them if provided
+- **Custom Metadata**: Any additional fields are merged directly into the user object
+- **Performance**: Consider caching expensive queries in your provider implementation
+
 ### Organization Selection Flow
 
 The package supports multi-organization users with an optional organization selection step after login. This is useful when users belong to multiple organizations and need to choose which one to access.
@@ -742,6 +882,7 @@ homework/
 │   ├── Contracts/
 │   │   ├── AuthenticationResponseContract.php
 │   │   ├── OrganizationProviderContract.php
+│   │   ├── TokenClaimsProviderContract.php
 │   │   └── UserResponseContract.php
 │   ├── Http/
 │   │   ├── Middleware/
@@ -771,6 +912,7 @@ homework/
 ├── tests/
 │   ├── Feature/
 │   │   ├── MiddlewareTest.php
+│   │   ├── TokenClaimsProviderTest.php
 │   │   └── UserManagementTest.php
 │   ├── Unit/
 │   │   └── ServiceProviderTest.php
@@ -785,7 +927,7 @@ homework/
 
 ### Key Components
 
-- **Homework**: Central configuration class for headless views (similar to Passport)
+- **Homework**: Central configuration class providing static helper methods for binding contracts: `useOrganizationProvider()`, `useUserResponse()`, `useAuthenticationResponse()`, `useTokenClaimsProvider()`, and configuring headless views with `organizationSelectionView()` (similar to Passport)
 - **HomeworkServiceProvider**: Registers routes, loads views, and binds contracts
 - **ClientService**: Static service for easily creating WorkOS-compatible OAuth clients
 - **CreateWorkOsClientCommand**: Artisan command for creating OAuth clients with auto-install script output
@@ -797,6 +939,7 @@ homework/
 - **UserResponse**: Default implementation with WorkOS User integration and avatar support
 - **AuthenticationResponseContract**: Interface for customizing complete authentication response
 - **AuthenticationResponse**: Default implementation handling top-level organization_id
+- **TokenClaimsProviderContract**: Interface for providing custom token claims (organizations, permissions, roles, metadata)
 - **OrganizationProviderContract**: Interface for providing user organizations
 - **RequireOrganizationSelection**: Middleware for multi-organization selection flow
 - **Client Model**: Custom Passport Client model with first-party auto-approval (optional)
@@ -840,13 +983,6 @@ To migrate from WorkOS to this self-hosted solution:
 - **Cost Effective**: No WorkOS subscription required
 - **Data Privacy**: User data stays in your own database
 - **Customizable**: Full control over authentication flow and UI
-
-## Requirements
-
-- PHP ^8.2
-- Laravel ^11.0 or ^12.0
-- Laravel Passport ^13.0
-- Laravel WorkOS ^0.5.0 (includes organization support)
 
 ## License
 
